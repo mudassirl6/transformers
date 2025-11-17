@@ -516,12 +516,25 @@ class MistralCommonTokenizer(PushToHubMixin):
         ]
 
     def _is_control_token(self, token_id: int) -> bool:
+        
         if self._tokenizer_type == MistralTokenizerType.spm:
-            return token_id in self.tokenizer.instruct_tokenizer.tokenizer._control_tokens
+            control_tokens = self.tokenizer.instruct_tokenizer.tokenizer._control_tokens
+    
+            # Old versions: _control_tokens is a function
+            if callable(control_tokens):
+                control_tokens = control_tokens()
+    
+            # New versions: _control_tokens is a dict
+            if isinstance(control_tokens, dict):
+                control_tokens = control_tokens.values()
+    
+            return token_id in control_tokens
+    
         elif self._tokenizer_type == MistralTokenizerType.tekken:
             return token_id < self.tokenizer.instruct_tokenizer.tokenizer.num_special_tokens
         else:
             raise ValueError(f"Unknown tokenizer type: {self._tokenizer_type}")
+
 
     @overload
     def convert_ids_to_tokens(self, ids: int, skip_special_tokens: bool = False) -> str: ...
